@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 text-center">
+
+    <!-- Logos Row -->
+  <div class="d-flex justify-content-center align-items-center mb-4">
+    <img src="{{ url_for('static', filename='logo1.png') }}" alt="Benue Logo" class="logo me-3">
+  </div>
+
+  <!-- Welcome Message -->
+  <h1 class="display-4 text-success fw-bold">Welcome to the BIRS Performance Portal</h1>
+  <p class="lead">Track, verify, and analyze tax submissions with ease.</p>
+
+  {% if current_user.is_authenticated %}
+    <div class="alert alert-success">
+      Logged in as <strong>{{ current_user.username }}</strong> ({{ current_user.role }})
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+  {% else %}
+    <a href="{{ url_for('login') }}" class="btn btn-success btn-lg">Login to Get Started</a>
+  {% endif %}
+
+  <hr class="my-4">
+
+  <div class="row mt-4">
+    <div class="col-md-4">
+      <h5>📊 Stats</h5>
+      <ul class="list-group">
+        <li class="list-group-item">Total ATOs: {{ total_atos }}</li>
+        <li class="list-group-item">Verified Entries: {{ verified_count }}</li>
+        <li class="list-group-item">Total Submissions: {{ total_entries }}</li>
+      </ul>
+    </div>
+    <div class="col-md-4">
+      <h5>🔍 Features</h5>
+      <ul class="list-group">
+        <li class="list-group-item">Real-time performance tracking</li>
+        <li class="list-group-item">Secure RRR & PayDirect verification</li>
+        <li class="list-group-item">Export to Excel & PDF</li>
+      </ul>
+    </div>
+    <div class="col-md-4">
+      <h5>🔍 Features</h5>
+      <ul class="list-group">
+        <li class="list-group-item">Rejects duplicate RRR/PayDirect References</li>
+        <li class="list-group-item">Allows only same-month payment entries</li>
+        <li class="list-group-item">League table style ranking by percentage to target</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}ATO Dashboard{% endblock %}
+{% block content %}
+<h2>Welcome {{ current_user.username }}</h2>
+<p>Enter your tax returns and track your monthly performance.</p>
+
+<a href="{{ url_for('enter_tax_data') }}" class="btn btn-success">➕ Enter Your Returns</a>
+<a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
+
+<h3 class="mt-5">Your Performance Summary</h3>
+{% if summaries %}
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Sheet</th>
+      <th>Total Amount</th>
+      <th>eBills</th>
+      <th>PayDirect</th>
+      <th>Remita Verified</th>
+      <th>Interswitch Verified</th>
+      <th>Date Uploaded</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in summaries %}
+    <tr>
+      <td>{{ item.sheet_name }}</td>
+      <td>{{ item.total_amount }}</td>
+      <td>{{ item.ebills }}</td>
+      <td>{{ item.paydirect }}</td>
+      <td>{{ '✅' if item.remita_verified else '❌' }}</td>
+      <td>{{ '✅' if item.interswitch_verified else '❌' }}</td>
+      <td>{{ item.date_uploaded.strftime('%Y-%m-%d') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No performance data available yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+  <h2 class="fw-bold mb-4">
+    {% if current_user.role == 'ato' %}
+      👨‍💼 ATO Dashboard — {{ current_user.username }}
+    {% else %}
+      🏢 Admin Dashboard — {{ current_user.username }}
+    {% endif %}
+  </h2>
+
+  {% if current_user.role == 'ato' %}
+    <!-- ===========================
+         ATO DASHBOARD VIEW
+    ============================ -->
+
+    <!-- Download Submissions -->
+    <form method="GET" action="{{ url_for('download_submissions') }}" class="mb-4">
+      <label for="start_date">Start Date:</label>
+      <input type="date" name="start_date" required>
+      <label for="end_date">End Date:</label>
+      <input type="date" name="end_date" required>
+      <button type="submit" class="btn btn-primary">Download My Submissions</button>
+    </form>
+
+    <!-- ATO Summary Cards -->
+    <div class="row g-4 mb-4 mt-3 text-center">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h6 class="text-muted">🎯 Monthly Target</h6>
+            <h3 class="fw-bold">₦{{ "{:,.2f}".format(summaries.target or 0) }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h6 class="text-muted">💰 Cumulative Total</h6>
+            <h3 class="fw-bold text-success">₦{{ "{:,.2f}".format(summaries.total or 0) }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h6 class="text-muted">📈 Progress Toward Target</h6>
+            {% set percent = (summaries.total / summaries.target * 100) if summaries.target else 0 %}
+            <h3 class="fw-bold text-primary">{{ "%.1f"|format(percent) }}%</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="mb-4">
+      <a href="{{ url_for('enter_tax_data') }}" class="btn btn-success me-2">➕ Enter Tax Data</a>
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">🚪 Logout</a>
+    </div>
+
+    <!-- Recent Entries Table -->
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-primary text-white fw-semibold">
+        Your Recent Entries
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped mb-0 align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>RRR Amount (₦)</th>
+                <th>PayDirect Amount (₦)</th>
+                <th>Total (₦)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if summaries.records %}
+                {% for rec in summaries.records %}
+                <tr>
+                  <td>{{ rec.date_uploaded.strftime('%Y-%m-%d') }}</td>
+                  <td>{{ "{:,.2f}".format(rec.rrr_amount or 0) }}</td>
+                  <td>{{ "{:,.2f}".format(rec.paydirect_amount or 0) }}</td>
+                  <td><strong>₦{{ "{:,.2f}".format((rec.rrr_amount or 0) + (rec.paydirect_amount or 0)) }}</strong></td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="4" class="text-muted py-3">No performance records yet.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <!-- ===========================
+         ADMIN / CHAIRMAN DASHBOARD
+    ============================ -->
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#summary">Summary</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#league">League Table</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#analytics">Analytics</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#export">Exports</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- ===== SUMMARY TAB ===== -->
+      <div id="summary" class="tab-pane fade show active">
+        <div class="row g-4 mb-4 text-center">
+          <div class="col-md-4">
+            <div class="card shadow-sm p-3">
+              <h5>eBills / Remita (RRR)</h5>
+              <h4 class="text-success fw-bold">₦{{ "{:,.2f}".format(summaries.total_rrr or 0) }}</h4>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card shadow-sm p-3">
+              <h5>PayDirect</h5>
+              <h4 class="text-primary fw-bold">₦{{ "{:,.2f}".format(summaries.total_paydirect or 0) }}</h4>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card shadow-sm p-3">
+              <h5>Grand Total</h5>
+              <h4 class="fw-bold">₦{{ "{:,.2f}".format(summaries.grand_total or 0) }}</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Charts -->
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card shadow-sm p-4">
+              <h5 class="text-center mb-3">Monthly Revenue (Bar Chart)</h5>
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card shadow-sm p-4">
+              <h5 class="text-center mb-3">Revenue Trend (Line Chart)</h5>
+              <canvas id="lineChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== LEAGUE TAB ===== -->
+      <div id="league" class="tab-pane fade">
+        <div class="container mt-4">
+          <form method="GET" action="{{ url_for('dashboard') }}" class="row g-3 mb-4">
+            <div class="col-md-3">
+              <label for="month" class="form-label">Month</label>
+              <select name="month" class="form-select">
+                <option value="" {% if not summaries.month %}selected{% endif %}>All</option>
+                {% set months = ["January","February","March","April","May","June","July","August","September","October","November","December"] %}
+                {% for m in range(1, 13) %}
+                  <option value="{{ m }}" {% if summaries.month == m %}selected{% endif %}>{{ months[m-1] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="year" class="form-label">Year</label>
+              <select name="year" class="form-select">
+                {% for y in range(current_year - 5, current_year + 1) %}
+                  <option value="{{ y }}" {% if summaries.year == y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary">Apply Filter</button>
+            </div>
+          </form>
+
+          {% if summaries.from_date and summaries.to_date %}
+            <h6 class="text-muted text-center mb-4">
+              Showing performance from <strong>{{ summaries.from_date }}</strong> to <strong>{{ summaries.to_date }}</strong>
+            </h6>
+          {% endif %}
+
+          <div class="table-responsive shadow-sm">
+            <table class="table table-striped table-hover align-middle">
+              <thead class="table-primary text-center">
+                <tr>
+                  <th scope="col">🏅 Rank</th>
+                  <th scope="col">👤 ATO</th>
+                  <th scope="col">🎯 Target (₦)</th>
+                  <th scope="col">💳 RRR (₦)</th>
+                  <th scope="col">🏦 Paydirect (₦)</th>
+                  <th scope="col">💰 Total Actual (₦)</th>
+                  <th scope="col">📈 % Achieved</th>
+                  <th scope="col">🔍 Details</th>
+                </tr>
+              </thead>
+              <tbody class="text-center">
+                {% for entry in summaries.league %}
+                <tr class="{% if loop.index == 1 %}table-success{% elif loop.index == 2 %}table-info{% elif loop.index == 3 %}table-warning{% endif %}">
+                  <td><strong>{{ loop.index }}</strong></td>
+                  <td class="text-start fw-semibold">{{ entry.ATO }}</td>
+                  <td>{{ "{:,.2f}".format(entry.Target or 0) }}</td>
+                  <td>{{ "{:,.2f}".format(entry.RRR or 0) }}</td>
+                  <td>{{ "{:,.2f}".format(entry.Paydirect or 0) }}</td>
+                  <td>{{ "{:,.2f}".format((entry.RRR or 0) + (entry.Paydirect or 0)) }}</td>
+                  <td class="fw-bold
+                      {% if entry.Percent >= 100 %}text-success
+                      {% elif entry.Percent >= 75 %}text-primary
+                      {% elif entry.Percent >= 50 %}text-warning
+                      {% else %}text-danger{% endif %}">
+                    {{ "%.1f"|format(entry.Percent or 0) }}%
+                  </td>
+                  <td>
+                    <a href="{{ url_for('ato_detail', user_id=entry.user_id, from_date=summaries.from_date, to_date=summaries.to_date) }}" class="btn btn-sm btn-outline-primary">
+                      View
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ANALYTICS TAB ===== -->
+      <div id="analytics" class="tab-pane fade">
+        <h4 class="fw-bold mb-3">Analytics</h4>
+
+        <!-- Analytics summary cards and charts -->
+        <div class="row g-4 mb-4 text-center">
+          <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+              <h5>Total RRR Collected</h5>
+              <h4 class="text-success fw-bold">₦{{ "{:,.2f}".format(summaries.total_rrr or 0) }}</h4>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+              <h5>Total PayDirect Collected</h5>
+              <h4 class="text-primary fw-bold">₦{{ "{:,.2f}".format(summaries.total_paydirect or 0) }}</h4>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+              <h5>Grand Total</h5>
+              <h4 class="fw-bold">₦{{ "{:,.2f}".format(summaries.grand_total or 0) }}</h4>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+              <h5>Average % Target Achieved</h5>
+              <h4 class="fw-bold text-warning">{{ "%.1f"|format(summaries.avg_percent or 0) }}%</h4>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-md-6">
+            <div class="card shadow-sm p-4">
+              <h5 class="text-center mb-3">Monthly Revenue Trend</h5>
+              <canvas id="analyticsRevenueChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card shadow-sm p-4">
+              <h5 class="text-center mb-3">% Target Achieved per ATO</h5>
+              <canvas id="analyticsTargetChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card shadow-sm p-4 mt-4">
+              <h5 class="text-center mb-3">Top 5 Performers</h5>
+              <canvas id="analyticsTopChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card shadow-sm p-4 mt-4">
+              <h5 class="text-center mb-3">Bottom 5 Performers</h5>
+              <canvas id="analyticsBottomChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EXPORT TAB ===== -->
+      <div id="export" class="tab-pane fade">
+        <h4 class="fw-bold mb-3">📤 Export Data</h4>
+        <a href="{{ url_for('export_excel') }}" class="btn btn-outline-primary">📊 Export as Excel</a>
+        <a href="{{ url_for('export_pdf') }}" class="btn btn-outline-secondary">🧾 Export as PDF</a>
+
+        <h5 class="fw-bold mt-4 mb-3">📥 Export Filtered Submissions</h5>
+        <form method="GET" action="{{ url_for('download_submissions') }}" class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">From Date</label>
+            <input type="date" name="from_date" class="form-control" value="{{ summaries.from_date }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">To Date</label>
+            <input type="date" name="to_date" class="form-control" value="{{ summaries.to_date }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Month</label>
+            <input type="number" name="month" min="1" max="12" class="form-control" value="{{ summaries.month }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Year</label>
+            <input type="number" name="year" class="form-control" value="{{ summaries.year }}">
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">Select ATO(s)</label>
+            <select name="ato_ids" multiple class="form-select">
+              {% for user in summaries.league %}
+                <option value="{{ user.user_id }}">{{ user.ATO }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-12 text-end">
+            <button class="btn btn-success">Download Filtered Data</button>
+          </div>
+        </form>
+      </div>
+    </div> <!-- CLOSE tab-content -->
+
+    <!-- ===== CHART.JS SCRIPTS ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const makeChart = (id, config) => {
+            const canvas = document.getElementById(id);
+            if (canvas) new Chart(canvas, config);
+        };
+
+        /* ===== SUMMARY TAB CHARTS ===== */
+        /* SUMMARY BAR CHART */
+        makeChart("barChart", {
+            type: "bar",
+            data: {
+                labels: {{ summaries.summary_chart_labels | tojson }},
+                datasets: [
+                    { label: "RRR", data: {{ summaries.summary_rrr_values | tojson }}, backgroundColor: "#198754" },
+                    { label: "PayDirect", data: {{ summaries.summary_paydirect_values | tojson }}, backgroundColor: "#0d6efd" }
+                ]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        makeChart("lineChart", {
+            type: "line",
+            data: {
+                labels: {{ summaries.labels | tojson }},
+                datasets: [
+                    { label: "RRR", data: {{ summaries.rrr_values | tojson }}, borderColor: "#198754", fill: false, tension: 0.3 },
+                    { label: "PayDirect", data: {{ summaries.pay_values | tojson }}, borderColor: "#0d6efd", fill: false, tension: 0.3 },
+                    { label: "Total", data: {{ summaries.total_values | tojson }}, borderColor: "#ffc107", fill: false, tension: 0.3 }
+                ]
+              },
+              options: {
+                  responsive: true,
+                  plugins: { legend: { display: true } },
+                  scales: {
+                      y: { beginAtZero: true },
+                      x: { title: { display: true, text: "Date" } }
+                  }
+              }
+            });
+
+        
+        /* REVENUE TREND */
+        makeChart("analyticsRevenueChart", {
+            type: "line",
+            data: {
+                labels: {{ summaries.analytics | map(attribute='month_name') | list | tojson }},
+                datasets: [
+                    { label: "RRR", data: {{ summaries.analytics | map(attribute='rrr') | list | tojson }}, borderColor: "#198754", fill: false },
+                    { label: "PayDirect", data: {{ summaries.analytics | map(attribute='paydirect') | list | tojson }}, borderColor: "#0d6efd", fill: false },
+                    { label: "Total", data: {{ summaries.analytics | map(attribute='total') | list | tojson }}, borderColor: "#ffc107", fill: false }
+                ]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        /* % TARGET MET PER ATO */
+        makeChart("analyticsTargetChart", {
+            type: "bar",
+            data: {
+                labels: {{ summaries.league | map(attribute='ATO') | list | tojson }},
+                datasets: [{ label: "% Target Achieved", data: {{ summaries.league | map(attribute='Percent') | list | tojson }}, backgroundColor: "#fd7e14" }]
+            },
+            options: { indexAxis: "y", plugins: { legend: { display: false }}, scales: { x: { beginAtZero: true }} }
+        });
+
+        /* TOP 5 CHART */
+        makeChart("analyticsTopChart", {
+            type: "bar",
+            data: {
+                labels: {{ summaries.top5_labels | default([]) | tojson }},
+                datasets: [{ label: "% Target Achieved", data: {{ summaries.top5_values | default([]) | tojson }}, backgroundColor: "#198754" }]
+            },
+            options: { indexAxis: "y", plugins: { legend: { display: false }}, scales: { x: { beginAtZero: true }} }
+        });
+
+        /* BOTTOM 5 CHART */
+        makeChart("analyticsBottomChart", {
+            type: "bar",
+            data: {
+                labels: {{ summaries.bottom5_labels | default([]) | tojson }},
+                datasets: [{ label: "% Target Achieved", data: {{ summaries.bottom5_values | default([]) | tojson }}, backgroundColor: "#dc3545" }]
+            },
+            options: { indexAxis: "y", plugins: { legend: { display: false }}, scales: { x: { beginAtZero: true }} }
+        });
+
+        /* RESTORE LAST ACTIVE TAB */
+        let lastTab = localStorage.getItem("activeTab");
+        if (lastTab) {
+            let trigger = document.querySelector(`button[data-bs-target="${lastTab}"]`);
+            if (trigger) new bootstrap.Tab(trigger).show();
+        }
+
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(btn => {
+            btn.addEventListener('shown.bs.tab', function (e) {
+                let id = e.target.getAttribute("data-bs-target");
+                localStorage.setItem("activeTab", id);
+            });
+        });
+    });
+    </script>
+
+  {% endif %}
+</div>
+{% endblock %}

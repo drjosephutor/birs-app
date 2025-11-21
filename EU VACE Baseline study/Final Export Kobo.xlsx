@@ -1,0 +1,19 @@
+import pandas as pd
+
+# Load the dataset
+df = pd.read_csv('Final Export Kobo.xlsx')  # Replace with your actual filename
+
+# Show the first few rows
+print("Original Data:")
+print(df.head())
+
+# Drop missing values
+df.dropna(inplace=True)
+
+# Remove duplicates
+df.drop_duplicates(inplace=True)
+
+# Save the cleaned data
+df.to_csv('cleaned_data.csv', index=False)
+
+print("\nCleaned Data saved as 'cleaned_data.csv'")

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Create New ATO{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+    <h2 class="mb-4 text-center">Create New ATO & Assign Target</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-3">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="mb-3">
+            <label for="username" class="form-label">ATO Username</label>
+            <input type="text" name="username" class="form-control" required placeholder="Enter ATO username">
+        </div>
+
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" required placeholder="Enter password">
+        </div>
+
+        <div class="mb-3">
+            <label for="target_amount" class="form-label">Fixed Monthly Target</label>
+            <input type="number" name="target_amount" class="form-control" required min="0" placeholder="₦0.00">
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Create ATO</button>
+        </div>
+    </form>
+
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('league_table') }}" class="btn btn-secondary">← Back to League Table</a>
+    </div>
+</div>
+{% endblock %}
+

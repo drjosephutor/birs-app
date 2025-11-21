@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <header class="bg-dark text-white p-3 mb-4">
+        <div class="container">
+            <h1 class="mb-2">Benue Internal Revenue Service Performance Monitor</h1>
+            {% if current_user.is_authenticated %}
+            <nav class="nav">
+                {% if current_user.role == 'ato' %}
+                <li><a href="{{ url_for('enter_tax_data') }}">Enter Tax Data</a></li>
+                <a class="nav-link text-white" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a class="nav-link text-white" href="{{ url_for('view_entries') }}">My Returns</a>
+                {% endif %}
+                {% if current_user.role == 'admin' %}
+                    <a class="nav-link text-white" href="{{ url_for('manage_users') }}">Manage Users</a>
+                    <a class="nav-link text-white" href="{{ url_for('view_entries') }}">View All Entries</a>
+                    <a class="nav-link text-white" href="{{ url_for('create_user') }}">Create New User</a>
+                    <a class="nav-link text-white" href="{{ url_for('create_ato') }}">Create ATO & Target</a>
+                    <a class="nav-link text-white" href="{{ url_for('analytics_dashboard') }}">Analytics</a>
+                    <a class="nav-link text-white" href="{{ url_for('league_table') }}">League Table</a>
+                {% endif %}
+                <a class="nav-link text-white" href="{{ url_for('logout') }}">Logout</a>
+            </nav>
+            {% endif %}
+        </div>
+    </header>
+    <meta charset="UTF-8">
+    <title>{% block title %}BIRS App{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+  @media print {
+    .nav-tabs, .btn, form, .no-print {
+      display: none !important;
+    }
+    .tab-pane {
+      display: block !important;
+    }
+  }
+</style>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
+</head>
+<body>
+        <main class="container mt-4 mb-5">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+               {{ message }}
+               <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Back Button -->
+        {% if request.endpoint != 'index' %}
+          <a href="{{ request.referrer or url_for('dashboard') }}" class="btn btn-secondary mb-3">← Back</a>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-light text-center py-3">
+        <p class="mb-0">&copy; 2025 Naswem</p>
+    </footer>
+
+    <!-- Bootstrap JS (optional for dropdowns, modals, etc.) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

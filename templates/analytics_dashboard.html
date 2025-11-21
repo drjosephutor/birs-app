@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Analytics Dashboard{% endblock %}
+{% block content %}
+
+<div class="container-fluid px-3">
+ <h2>Analytics Dashboard</h2>
+ <form method="GET" action="{{ url_for('analytics_dashboard') }}" class="row g-3 mb-4">
+  <div class="col-md-3 col-12">
+    <label for="month" class="form-label">Month</label>
+    <select name="month" id="month" class="form-select">
+      <option value="">All</option>
+      {% for m in range(1, 13) %}
+        <option value="{{ m }}" {% if request.args.get('month') == m|string %}selected{% endif %}>Month {{ m }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3 col-12">
+    <label for="tax_item" class="form-label">Tax Item</label>
+    <input type="text" name="tax_item" id="tax_item" class="form-control" value="{{ request.args.get('tax_item', '') }}">
+  </div>
+  <div class="col-md-3 col-12">
+    <label for="subhead" class="form-label">Subhead</label>
+    <input type="text" name="subhead" id="subhead" class="form-control" value="{{ request.args.get('subhead', '') }}">
+  </div>
+  <div class="col-md-3 col-12 d-grid">
+    <button type="submit" class="btn btn-primary">Apply Filters</button>
+  </div>
+ </form>
+   <div class="mb-4">
+    <a href="{{ url_for('export_excel', month=request.args.get('month'), tax_item=request.args.get('tax_item'), subhead=request.args.get('subhead')) }}" class="btn btn-outline-success me-2">📤 Export to Excel</a>
+    <a href="{{ url_for('export_pdf', month=request.args.get('month'), tax_item=request.args.get('tax_item'), subhead=request.args.get('subhead')) }}" class="btn btn-outline-danger">📄 Export to PDF</a>
+  </div>
+  <button onclick="window.print()" class="btn btn-outline-dark mb-4">🖨️ Print Report</button>
+  <!-- Tabs Navigation -->
+ <ul class="nav nav-tabs mb-3" id="analyticsTabs" role="tablist">
+   <li class="nav-item" role="presentation">
+     <button class="nav-link active" id="chart-tab" data-bs-toggle="tab" data-bs-target="#chart" type="button" role="tab">📊 Monthly Chart</button>
+   </li>
+   <li class="nav-item" role="presentation">
+    <button class="nav-link" id="submissions-tab" data-bs-toggle="tab" data-bs-target="#submissions" type="button" role="tab">📋 My Submissions</button>
+   </li>
+   <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tracker-tab" data-bs-toggle="tab" data-bs-target="#tracker" type="button" role="tab">🎯 Performance Tracker</button>
+   </li>
+   <li class="nav-item" role="presentation">
+    <button class="nav-link" id="cards-tab" data-bs-toggle="tab" data-bs-target="#cards" type="button" role="tab">🧾 Summary Cards</button>
+   </li>
+ </ul>
+
+ <!-- Tabs Content -->
+ <div class="tab-content" id="analyticsTabsContent">
+   <!-- Monthly Chart -->
+   <div class="tab-pane fade show active" id="chart" role="tabpanel">
+     <div class="mb-4">
+        <canvas id="monthlyChart" style="max-width: 100%; height: 400px;"></canvas>
+     </div>
+     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+     <script>
+       const data = {{ chart_data | tojson | safe }};
+       const labels = data.map(d => `Month ${d.month}`);
+       const totals = data.map(d => d.total);
+
+       const ctx = document.getElementById('monthlyChart').getContext('2d');
+       new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Monthly Total',
+            data: totals,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+            }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+     </script>
+   </div>
+
+   <!-- My Submissions -->
+   <div class="tab-pane fade" id="submissions" role="tabpanel">
+     <div class="table-responsive">
+      <table class="table table-bordered table-striped mt-3">
+       <thead>
+        <tr>
+          <th>#</th>
+          <th>Tax Item</th>
+          <th>Subhead</th>
+          <th>Date Uploaded</th>
+          <th>Details</th>
+        </tr>
+       </thead>
+       <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ entry.tax_item }}</td>
+          <td>{{ entry.subhead or '—' }}</td>
+          <td>{{ entry.date_uploaded.strftime('%Y-%m-%d') }}</td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="toggleDetails('{{ loop.index }}')">View</button>
+            <div id="details-{{ loop.index }}" style="display:none; margin-top:10px;">
+              {% if entry.data %}
+              <ul>
+                {% for key, value in entry.data.items() %}
+                  <li><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <p>No details available.</p>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <script>
+      function toggleDetails(index) {
+        const el = document.getElementById('details-' + index);
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      }
+    </script>
+  </div>
+
+  <!-- Performance Tracker -->
+  <div class="tab-pane fade" id="tracker" role="tabpanel">
+   <div class="table-responsive">
+     <table class="table table-bordered mt-3">
+      <tr>
+        <th>Target Amount</th>
+        <td>{{ target.target_amount if target else 'Not Set' }}</td>
+      </tr>
+      <tr>
+        <th>Actual Collected</th>
+        <td>{{ actual }}</td>
+      </tr>
+      <tr>
+        <th>Performance</th>
+        <td>
+          {% if target %}
+            {{ ((actual / target.target_amount) * 100) | round(2) }}%
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+     </table>
+    </div>
+   </div> 
+  <!-- Summary Cards -->
+  <div class="tab-pane fade" id="cards" role="tabpanel">
+    <div class="row mt-3">
+      <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3">
+          <div class="card-header">Target</div>
+          <div class="card-body">
+            <h5 class="card-title">{{ target.target_amount if target else 'Not Set' }}</h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-white bg-success mb-3">
+          <div class="card-header">Collected</div>
+          <div class="card-body">
+            <h5 class="card-title">{{ actual }}</h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-white bg-warning mb-3">
+          <div class="card-header">Performance</div>
+          <div class="card-body">
+            <h5 class="card-title">
+              {% if target %}
+                {{ ((actual / target.target_amount) * 100) | round(2) }}%
+              {% else %}
+                —
+              {% endif %}
+            </h5>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-4">← Back to Dashboard</a>
+</div>
+
+{% endblock %}
+
+
+
+

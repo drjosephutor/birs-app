@@ -1,0 +1,35 @@
+Control group Female - 310
+	      male - 588
+
+Experimental group Female - 71
+		   Male - 260
+
+
+youth 609 male 413
+          female 196
+
+MSMEs are medium and small-scale businesses involving local milk traders and retailers of dairy goods.
+Processors are producers of yogurt, cheese, butter or ghee, some of them package and brand dairy products.
+Aggregators are intermediaries who collect milk from multiple producers and deliver it to processors or markets, they bulk milk volumes and coordinate transport alongside cold storage.
+
+
+- Producing yogurt, cheese, butter, or ghee
+- Packaging and branding dairy products
+They can range from small cottage industries to larger commercial facilities. In your data, processors are tracked by monthly sales revenue and product type (e.g., yogurt, fresh milk).
+
+
+Why they matter: They add value to raw milk, extend shelf life, and connect dairy to urban markets.
+
+🚚 Aggregators
+Aggregators are intermediaries who collect milk from multiple producers and deliver it to processors or markets. Their roles include:
+- Bulking milk volumes
+- Coordinating transport and cold storage
+- Managing payments between farmers and buyers
+They’re crucial for linking smallholder farmers to formal markets, but often face challenges like spoilage, delayed payments, and poor infrastructure.
+Why they matter: Aggregators help overcome fragmentation in the dairy sector and enable scale. 
+
+An organization focused on providing solutions for dairy farmers, including access to improved genetics through breeding programs and artificial insemination services, which helps increase milk yields
+
+Farmers cultivate ginger from planting to harvest.
+Processors add value by transforming raw ginger into usable or exportable forms.
+MSMEs include medium and small-scale business who trade in raw ginger from farmers, finished products from processors and some serve as exporters

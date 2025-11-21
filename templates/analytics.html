@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Performance Analytics</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>ATO Name</th>
+            <th>Total Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ato, total in analytics %}
+            <tr>
+             <td>{{ ato }}</td>
+             <td>₦{{ total | round(2) }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('export_analytics') }}" class="btn btn-success">Download CSV</a>
+{% endblock %}

@@ -1,0 +1,9 @@
+body {
+    background-color: #f0fff4; /* soft green tint */
+    color: #1b5e20; /* deep green text */
+}
+
+.logo {
+    height: 100px;
+    width: auto;
+}

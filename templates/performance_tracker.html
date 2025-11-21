@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Performance Tracker{% endblock %}
+{% block content %}
+
+<h2>Performance Tracker</h2>
+
+<table class="table table-bordered">
+  <tr>
+    <th>Target Amount</th>
+    <td>{{ target.target_amount if target else 'Not Set' }}</td>
+  </tr>
+  <tr>
+    <th>Actual Collected</th>
+    <td>{{ actual }}</td>
+  </tr>
+  <tr>
+    <th>Performance</th>
+    <td>
+      {% if target %}
+        {{ ((actual / target.target_amount) * 100) | round(2) }}%
+      {% else %}
+        —
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-4">← Back to Dashboard</a>
+{% endblock %}

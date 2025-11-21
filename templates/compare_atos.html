@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Compare ATOs{% endblock %}
+{% block content %}
+
+<h2>ATO Performance Comparison</h2>
+<p>This chart compares total returns across all ATOs over time.</p>
+
+<form method="GET" action="{{ url_for('compare_atos') }}" class="mb-4">
+  <label for="month">Month:</label>
+  <input type="month" name="month" id="month" class="form-control" style="max-width: 200px; display: inline-block;">
+
+  <label for="lga" class="ms-3">LGA:</label>
+  <select name="lga" id="lga" class="form-select" style="max-width: 200px; display: inline-block;">
+    <option value="">All LGAs</option>
+    {% for lga in lgas %}
+      <option value="{{ lga }}">{{ lga }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit" class="btn btn-primary ms-3">Filter</button>
+</form>
+
+<canvas id="multiChart" width="800" height="400"></canvas>
+
+<!-- Chart.js and data blocks -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script id="multi-ato-data" type="application/json">{{ chart_data | tojson }}</script>
+<script id="multi-labels" type="application/json">{{ chart_labels | tojson }}</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const labels = JSON.parse(document.getElementById('multi-labels').textContent);
+    const multiData = JSON.parse(document.getElementById('multi-ato-data').textContent);
+
+    const datasets = Object.entries(multiData).map(([name, values], index) => ({
+      label: name,
+      data: values,
+      backgroundColor: `rgba(${50 + index * 40}, ${100 + index * 30}, ${200 - index * 20}, 0.6)`,
+      borderColor: `rgba(${50 + index * 40}, ${100 + index * 30}, ${200 - index * 20}, 1)`,
+      borderWidth: 1
+    }));
+
+    new Chart(document.getElementById('multiChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ₦${context.formattedValue}`;
+              }
+            }
+          },
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        }
+      }
+    });
+  });
+</script>
+<h3 class="mt-5">Top Performers</h3>
+<ol>
+  {% for name, values in rankings %}
+    <li>
+      <strong>{{ name }}</strong> – ₦{{ values | sum }}
+      {% if loop.index == 1 %} 🥇 Gold Badge
+      {% elif loop.index == 2 %} 🥈 Silver Badge
+      {% elif loop.index == 3 %} 🥉 Bronze Badge
+      {% endif %}
+    </li>
+  {% endfor %}
+</ol>
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-4">← Back to Dashboard</a>
+{% endblock %}

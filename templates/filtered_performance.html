@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Filtered Tax Entries</h2>
+
+  {% if month or week or day %}
+    <p class="text-muted">
+      Showing results for:
+      {% if month %} Month: {{ month }} {% endif %}
+      {% if week %} | Week: {{ week }} {% endif %}
+      {% if day %} | Day: {{ day }} {% endif %}
+    </p>
+  {% endif %}
+
+  {% if entries %}
+    <table class="table table-bordered table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Tax Item</th>
+          <th>Subhead</th>
+          <th>RRR</th>
+          <th>RRR Verified</th>
+          <th>RRR Amount</th>
+          <th>PayDirect Ref</th>
+          <th>PayDirect Verified</th>
+          <th>PayDirect Amount</th>
+          <th>Date Uploaded</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td>{{ entry.tax_item }}</td>
+          <td>{{ entry.subhead or '—' }}</td>
+          <td>{{ entry.rrr or '—' }}</td>
+          <td>{{ '✅' if entry.rrr_verified else '❌' }}</td>
+          <td>₦{{ entry.rrr_amount or 0 }}</td>
+          <td>{{ entry.paydirect_ref or '—' }}</td>
+          <td>{{ '✅' if entry.paydirect_verified else '❌' }}</td>
+          <td>₦{{ entry.paydirect_amount or 0 }}</td>
+          <td>{{ entry.date_uploaded.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">No entries found for the selected filters.</div>
+  {% endif %}
+</div>
+{% endblock %}
+

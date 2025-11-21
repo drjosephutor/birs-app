@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Enter Tax Data{% endblock %}
+{% block content %}
+
+<h2>Enter Tax Item Data</h2>
+<form method="POST" action="{{ url_for('submit_tax_item') }}" id="taxForm">
+    {{ form.hidden_tag() }}
+  <label for="tax_item">Select Tax Item:</label>
+  <select id="tax_item" name="tax_item" class="form-select mb-3" required>
+    <option value="">— Choose —</option>
+    <option value="PAYE">Pay As You Earn (PAYE)</option>
+    <option value="Withholding">Withholding Tax</option>
+    <option value="Development">Development Levy</option>
+    <option value="Business">Business Premises</option>
+    <option value="Penalty">Penalty For Offences</option>
+    <option value="Interest">Interest On Tax Defaulters</option>
+    <option value="Personal">Personal Income Tax</option>
+    <option value="Road">Road Taxes</option>
+  </select>
+
+  <div id="road-subhead-container" style="display: none;">
+    <label for="road_subhead">Select Road Tax Type:</label>
+    <select id="road_subhead" name="road_subhead" class="form-select mb-3">
+      <option value="">— Choose Subhead —</option>
+      <option value="Vehicle License">Vehicle License</option>
+      <option value="Hackney Permit">Hackney Permit</option>
+      <option value="Road Worthiness">Certificate of Road Worthiness</option>
+      <option value="Learner's Permit">Learner's Permit</option>
+      <option value="Plate Number">Sales of Plate Number</option>
+      <option value="New Registration">New Registration</option>
+      <option value="Vehicle Registration Booklet">Vehicle Registration Booklet</option>
+      <option value="Proof of Ownership">Proof of Ownership</option>
+      <option value="Change of Ownership Certificate">Change of Ownership Certificate</option>
+      <option value="Heavy Duty Permit">Heavy Duty Permit</option>
+    </select>
+  </div>
+
+
+
+<div id="form-fields"></div>
+
+  <button type="submit" class="btn btn-primary mt-3">Submit Entry</button>
+</form>
+
+<script>
+  const fieldMap = {
+    PAYE: ["Taxpayer's Name", 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    Withholding: ["Taxpayer's Name", 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    Development: ["Taxpayer's Name", 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    Business: ["Taxpayer's Name", 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    Penalty: ["Taxpayer's Name", 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    Interest: ["Taxpayer's Name", 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    Personal: ["Taxpayer's Name", 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    // Road Tax Subheads
+    "Vehicle License": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Hackney Permit": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Road Worthiness": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Learner's Permit": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Plate Number": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'PayDirect'],
+    "New Registration": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Vehicle Registration Booklet": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Proof of Ownership": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Change of Ownership Certificate": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Heavy Duty Permit": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+    "Computerized Vehicle Inspection": ['Vehicle Type', 'Registration Number', 'Taxpayer Name', 'Amount', 'Date of Remittance', 'Remita RRR', 'PayDirect'],
+  };
+  function renderFields(fields) {
+    const container = document.getElementById('form-fields');
+    container.innerHTML = '';
+
+    fields.forEach(field => {
+      const fieldName = field.replace(/\s+/g, '_').toLowerCase();
+      container.innerHTML += `
+        <div class="mb-3">
+          <label>${field}</label>
+          <input type="${field === 'Amount' ? 'number' : 'text'}" name="${fieldName}" id="${fieldName}" class="form-control">
+        </div>
+      `;
+    });
+
+    // Add auto-disable logic
+    const remitaField = document.querySelector('input[name="remita_rrr"]');
+    const paydirectField = document.querySelector('input[name="paydirect"]');
+
+    if (remitaField && paydirectField) {
+      remitaField.addEventListener('input', function () {
+        paydirectField.disabled = !!this.value.trim();
+      });
+
+      paydirectField.addEventListener('input', function () {
+        remitaField.disabled = !!this.value.trim();
+      });
+    }
+  }
+
+  document.getElementById('tax_item').addEventListener('change', function () {
+    const selected = this.value;
+    const container = document.getElementById('form-fields');
+    const subheadContainer = document.getElementById('road-subhead-container');
+
+    container.innerHTML = '';
+
+    if (selected === 'Road') {
+      subheadContainer.style.display = 'block';
+    } else {
+      subheadContainer.style.display = 'none';
+      const fields = fieldMap[selected] || [];
+      fields.forEach(field => {
+        container.innerHTML += `
+          <div class="mb-3">
+            <label>${field}</label>
+            <input type="${field === 'Amount' ? 'number' : 'text'}" name="${field.replace(/\s+/g, '_').toLowerCase()}" class="form-control" required>
+
+          </div>
+        `;
+      });
+    }
+  });
+  document.getElementById('tax_item').addEventListener('change', function () {
+    const selected = this.value;
+    const subheadContainer = document.getElementById('road-subhead-container');
+    const container = document.getElementById('form-fields');
+
+    container.innerHTML = '';
+
+    if (selected === 'Road') {
+      subheadContainer.style.display = 'block';
+    } else {
+      subheadContainer.style.display = 'none';
+      const fields = fieldMap[selected] || [];
+      renderFields(fields);
+    }
+  });
+
+  document.getElementById('road_subhead').addEventListener('change', function () {
+    const selectedSubhead = this.value;
+    const fields = fieldMap[selectedSubhead] || [];
+    renderFields(fields);
+  });
+
+  document.getElementById('taxForm').addEventListener('submit', function (e) {
+    const remitaField = document.querySelector('input[name="remita_rrr"]');
+    const paydirectField = document.querySelector('input[name="paydirect"]');
+
+    const remita = remitaField ? remitaField.value.trim() : '';
+    const paydirect = paydirectField ? paydirectField.value.trim() : '';
+
+    if (!remita && !paydirect) {
+      e.preventDefault();
+      alert("Please fill out either Remita RRR or PayDirect.");
+    }
+  });
+
+  const remitaField = document.querySelector('input[name="remita_rrr"]');
+  const paydirectField = document.querySelector('input[name="paydirect"]');
+
+  if (remitaField && paydirectField) {
+    remitaField.addEventListener('input', function () {
+      if (this.value.trim()) {
+        paydirectField.disabled = true;
+      } else {
+        paydirectField.disabled = false;
+      }
+    });
+
+    paydirectField.addEventListener('input', function () {
+      if (this.value.trim()) {
+        remitaField.disabled = true;
+      } else {
+        remitaField.disabled = false;
+      }
+    });
+  }
+</script>
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-4">← Back to Dashboard</a>
+{% endblock %}
+

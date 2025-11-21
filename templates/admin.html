@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+<h2>Welcome, Admin!</h2>
+<p>Use the tools below to manage users and view performance data across the system.</p>
+
+<ul>
+    <li><a href="{{ url_for('dashboard') }}">View Your Dashboard</a></li>
+    <li><a href="{{ url_for('upload_file') }}">Upload Monthly Returns</a></li>
+    <li><a href="{{ url_for('manage_users') }}">Manage Users</a></li>
+    <li><a href="{{ url_for('view_all_summaries') }}">View All Summaries</a></li>
+    <li><a href="{{ url_for('create_user') }}">Create New User</a></li>
+</ul>
+{% endblock %}

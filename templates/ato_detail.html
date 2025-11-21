@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }} — Performance Details{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+  <h2 class="mb-4 text-center">{{ user.username }} — Performance Details</h2>
+
+  <!-- 🔍 Date Range Filter -->
+  <form method="GET" action="{{ url_for('ato_detail', user_id=user.id) }}" 
+        class="row g-3 bg-light p-3 rounded shadow-sm mb-4">
+    <div class="col-md-4">
+      <label for="from_date" class="form-label fw-semibold">From Date</label>
+      <input type="date" name="from_date" id="from_date" class="form-control"
+             value="{{ request.args.get('from_date') or '' }}">
+    </div>
+
+    <div class="col-md-4">
+      <label for="to_date" class="form-label fw-semibold">To Date</label>
+      <input type="date" name="to_date" id="to_date" class="form-control"
+             value="{{ request.args.get('to_date') or '' }}">
+    </div>
+
+    <div class="col-md-4 d-flex align-items-end">
+      <button type="submit" class="btn btn-primary w-100 fw-semibold">Apply Filter</button>
+    </div>
+  </form>
+
+  {% if request.args.get('from_date') and request.args.get('to_date') %}
+    <h6 class="text-muted text-center mb-4">
+      Showing performance from <strong>{{ request.args.get('from_date') }}</strong> 
+      to <strong>{{ request.args.get('to_date') }}</strong>
+    </h6>
+  {% endif %}
+
+  <!-- Summary Cards -->
+  <div class="row g-4 mb-4 text-center">
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3">
+        <h5>Total Returns</h5>
+        <h4 class="text-success fw-bold">₦{{ "{:,.2f}".format(total_returns) }}</h4>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3">
+        <h5>Target</h5>
+        <h4 class="fw-bold">₦{{ "{:,.2f}".format(target.target_amount if target else 0) }}</h4>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3">
+        <h5>Achieved (%)</h5>
+        <h4 class="{% if percent_met >= 100 %}text-success{% elif percent_met >= 70 %}text-warning{% else %}text-danger{% endif %} fw-bold">
+          {{ percent_met }}%
+        </h4>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm p-3">
+        <h5>Last Entry</h5>
+        <h4 class="fw-semibold">{{ last_entry }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card p-4 shadow-sm mb-4">
+    <h5 class="text-center mb-3">Performance Trend</h5>
+    {% if chart_labels %}
+      <canvas id="performanceChart" height="120"></canvas>
+    {% else %}
+      <p class="text-muted text-center py-4">No data available for selected filters.</p>
+    {% endif %}
+  </div>
+
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('league_table', from_date=request.args.get('from_date'), to_date=request.args.get('to_date')) }}" 
+       class="btn btn-secondary">← Back to League Table</a>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% if chart_labels %}
+<script>
+const ctx = document.getElementById('performanceChart');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: {{ chart_labels|tojson }},
+    datasets: [
+      {
+        label: 'Total Returns (₦)',
+        data: {{ total_values|tojson }},
+        borderColor: '#0d6efd',
+        backgroundColor: 'rgba(13, 110, 253, 0.2)',
+        fill: true,
+        tension: 0.3
+      },
+      {
+        label: 'eBills',
+        data: {{ ebills_values|tojson }},
+        borderColor: '#198754',
+        backgroundColor: 'rgba(25, 135, 84, 0.2)',
+        fill: true,
+        tension: 0.3
+      },
+      {
+        label: 'PayDirect',
+        data: {{ paydirect_values|tojson }},
+        borderColor: '#ffc107',
+        backgroundColor: 'rgba(255, 193, 7, 0.2)',
+        fill: true,
+        tension: 0.3
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: { beginAtZero: true }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}
